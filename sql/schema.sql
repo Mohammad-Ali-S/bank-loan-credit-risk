@@ -1,0 +1,26 @@
+DROP TABLE IF EXISTS loans;
+CREATE TABLE loans (
+    loan_id INTEGER PRIMARY KEY,
+    issue_date TEXT,
+    loan_amount REAL,
+    funded_amount REAL,
+    term INTEGER,
+    int_rate REAL,
+    installment REAL,
+    grade TEXT,
+    sub_grade TEXT,
+    emp_length TEXT,
+    home_ownership TEXT,
+    annual_income REAL,
+    purpose TEXT,
+    dti REAL,
+    loan_status TEXT,
+    address_state TEXT,
+    application_type TEXT,
+    total_payment REAL,
+    loan_status_group TEXT,
+    is_default INTEGER,
+    risk_tier TEXT,
+    issue_month INTEGER,
+    issue_year INTEGER
+);

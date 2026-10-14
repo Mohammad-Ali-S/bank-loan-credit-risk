@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bank Loan Credit Risk Dashboard</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js" integrity="sha384-cCVCZkAjYNxaYKbM8lsArLznDF/SvMFr1jcZrvOpSTCa0W40ZAdLzHCEulnUa5i7" crossorigin="anonymous" charset="utf-8"></script>
+<style>
+:root{--bg:#F7FAFC;--card:#fff;--line:#E2E8F0;--ink:#1A202C;--mute:#4A5568;--blue:#2B6CB0;--green:#38A169;--red:#E53E3E;--amber:#D69E2E;--orange:#DD6B20}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif}
+header{background:#fff;border-bottom:1px solid var(--line);padding:12px 24px;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center;justify-content:space-between}
+h1{font-size:18px;margin:0}
+nav{display:flex;gap:6px}
+nav button{border:1px solid var(--line);background:#fff;padding:7px 14px;border-radius:6px;cursor:pointer;font:inherit;color:var(--mute)}
+nav button.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.filters{display:flex;gap:12px;flex-wrap:wrap;font-size:13px;color:var(--mute)}
+.filters select{margin-left:6px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font:inherit;background:#fff}
+main{padding:16px 24px;max-width:1400px;margin:0 auto}
+.page{display:none}.page.on{display:block}
+.row{display:grid;gap:14px;margin-bottom:14px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
+.g2{grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(330px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0}
+.card h3{font-size:13px;margin:0 0 6px;color:var(--mute);font-weight:600}
+.kpi .v{font-size:26px;font-weight:600;line-height:1.2}
+.kpi .s{font-size:12px;color:var(--mute);margin-top:2px}
+.up{color:var(--green)}.down{color:var(--red)}
+.chart{height:290px}.chart.tall{height:340px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mute);font-weight:600}
+.bar{display:inline-block;height:8px;background:var(--red);border-radius:2px;vertical-align:middle;margin-left:6px;opacity:.7}
+.note{font-size:13px;color:var(--mute);line-height:1.5}
+footer{text-align:center;font-size:12px;color:var(--mute);padding:10px 0 24px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Bank Loan Credit Risk &amp; Default Prediction</h1>
+  <nav id="nav">
+    <button data-p="p1" class="on">Summary</button>
+    <button data-p="p2">Overview</button>
+    <button data-p="p3">Risk &amp; Prediction</button>
+  </nav>
+  <div class="filters">
+    <label>Year<select id="f-year"></select></label>
+    <label>Loan status<select id="f-status"></select></label>
+    <label>Term<select id="f-term"></select></label>
+  </div>
+</header>
+<main>
+  <section id="p1" class="page on">
+    <div class="row kpis" id="kpi1"></div>
+    <div class="row kpis" id="kpi1b"></div>
+    <div class="row g2">
+      <div class="card"><h3>Loan status split (applications)</h3><div id="c-status" class="chart"></div></div>
+      <div class="card"><h3>Loan status breakdown</h3><div id="t-status"></div></div>
+    </div>
+    <div class="row"><div class="card"><h3>Monthly funded vs received amount</h3><div id="c-trend" class="chart tall"></div></div></div>
+  </section>
+
+  <section id="p2" class="page">
+    <div class="row g2">
+      <div class="card"><h3>Funded amount by state</h3><div id="c-state" class="chart tall"></div></div>
+      <div class="card"><h3>Funded amount by purpose</h3><div id="c-purpose" class="chart tall"></div></div>
+    </div>
+    <div class="row g3">
+      <div class="card"><h3>Funded amount by term</h3><div id="c-term" class="chart"></div></div>
+      <div class="card"><h3>Funded amount by employment length</h3><div id="c-emp" class="chart"></div></div>
+      <div class="card"><h3>Funded amount by home ownership</h3><div id="c-home" class="chart"></div></div>
+    </div>
+    <div class="row"><div class="card"><h3>Grade breakdown</h3><div id="t-grade"></div></div></div>
+  </section>
+
+  <section id="p3" class="page">
+    <div class="row kpis" id="kpi3"></div>
+    <div class="row g3">
+      <div class="card"><h3>Applications by risk tier</h3><div id="c-tier" class="chart"></div></div>
+      <div class="card"><h3>Funded amount and default rate by risk tier</h3><div id="c-tier2" class="chart"></div></div>
+      <div class="card"><h3>Default rate by grade (resolved loans)</h3><div id="c-grade" class="chart"></div></div>
+    </div>
+    <div class="row g3">
+      <div class="card"><h3>Applications by model-predicted risk band</h3><div id="c-band" class="chart"></div></div>
+      <div class="card"><h3>Actual default rate by predicted band (validation)</h3><div id="c-band2" class="chart"></div></div>
+      <div class="card"><h3>Top 15 model drivers (relative weight)</h3><div id="c-imp" class="chart"></div></div>
+    </div>
+    <div class="row"><div class="card note" id="how"></div></div>
+  </section>
+</main>
+<footer>Synthetic loan data (38,000 applications). Default rate = Bad Loans / (Good + Bad), excluding Current loans.</footer>
+
+<script>
+const D = __DATA__;
+const N = D.n, C = D.cols;
+const L = {};
+for (const k in D.cats) { const c = D.cats[k]; L[k] = c.codes.map(i => c.names[i]); }
+const COL = {Good:'#38A169', Bad:'#E53E3E', Current:'#D69E2E', blue:'#2B6CB0'};
+const STATUS_COL = {'Good Loan':COL.Good,'Bad Loan':COL.Bad,'Current':COL.Current};
+const TIER_ORDER = ['Low','Medium','High','Very High'];
+const TIER_COL = {'Low':COL.Good,'Medium':COL.Current,'High':'#DD6B20','Very High':COL.Bad};
+const EMP_ORDER = ['< 1 year','1 year','2 years','3 years','4 years','5 years','6 years','7 years','8 years','9 years','10+ years'];
+const cfg = {displayModeBar:false, responsive:true};
+const base = (extra={}) => Object.assign({margin:{t:8,r:10,b:42,l:56}, paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+  font:{family:'Segoe UI, system-ui, sans-serif', size:12, color:'#4A5568'}, showlegend:false}, extra);
+
+const esc = v => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = {
+  int: v => Math.round(v).toLocaleString('en-US'),
+  usd: v => '$' + Math.round(v).toLocaleString('en-US'),
+  usdM: v => '$' + (v/1e6).toFixed(1) + 'M',
+  pct: (v,d=1) => (v*100).toFixed(d) + '%'
+};
+
+const filt = {year:'All', status:'All', term:'All'};
+let page = 'p1';
+
+function mask() {
+  const out = [];
+  for (let i = 0; i < N; i++) {
+    if (filt.year !== 'All' && C.year[i] !== +filt.year) continue;
+    if (filt.status !== 'All' && L.status[i] !== filt.status) continue;
+    if (filt.term !== 'All' && L.term[i] !== filt.term) continue;
+    out.push(i);
+  }
+  return out;
+}
+function group(idx, key) {
+  const m = new Map();
+  for (const i of idx) {
+    const k = key(i);
+    let g = m.get(k);
+    if (!g) { g = {n:0, funded:0, recv:0, bad:0, good:0, cur:0, pred:0, rate:0, dti:0}; m.set(k, g); }
+    g.n++; g.funded += C.funded[i]; g.recv += C.recv[i]; g.pred += C.pred[i]; g.rate += C.int_rate[i]; g.dti += C.dti[i];
+    const s = L.status[i];
+    if (s === 'Bad Loan') g.bad++; else if (s === 'Good Loan') g.good++; else g.cur++;
+  }
+  return m;
+}
+const defRate = g => (g && g.bad + g.good > 0) ? g.bad / (g.bad + g.good) : null;
+const total = idx => group(idx, () => 'all').get('all') || {n:0,funded:0,recv:0,bad:0,good:0,cur:0,pred:0,rate:0,dti:0};
+const sortedEntries = (m, by='funded') => [...m.entries()].sort((a,b) => b[1][by] - a[1][by]);
+const kpi = (label, value, sub='') => `<div class="card kpi"><h3>${label}</h3><div class="v">${value}</div><div class="s">${sub}</div></div>`;
+const mom = (a, b) => (b ? `<span class="${a>=b?'up':'down'}">${a>=b?'&#9650;':'&#9660;'} ${fmt.pct(Math.abs(a-b)/b)} MoM</span>` : '');
+
+function renderP1(idx) {
+  const t = total(idx);
+  const goodN = t.good + t.cur, goodAmt = [...group(idx, i => L.status[i]).entries()].filter(([k]) => k !== 'Bad Loan').reduce((s,[,g]) => s + g.funded, 0);
+  const byStatus = group(idx, i => L.status[i]);
+  const bad = byStatus.get('Bad Loan') || {n:0,funded:0,recv:0};
+  const goodRecv = [...byStatus.entries()].filter(([k]) => k !== 'Bad Loan').reduce((s,[,g]) => s + g.recv, 0);
+
+  const months = group(idx, i => C.year[i]*100 + C.month[i]);
+  const keys = [...months.keys()].sort((a,b) => a-b);
+  const last = months.get(keys[keys.length-1]), prev = months.get(keys[keys.length-2]);
+
+  document.getElementById('kpi1').innerHTML =
+    kpi('Total applications', fmt.int(t.n), last ? `MTD ${fmt.int(last.n)} ` + mom(last.n, prev && prev.n) : '') +
+    kpi('Total funded amount', fmt.usd(t.funded), last ? `MTD ${fmt.usdM(last.funded)} ` + mom(last.funded, prev && prev.funded) : '') +
+    kpi('Total amount received', fmt.usd(t.recv)) +
+    kpi('Avg interest rate', t.n ? (t.rate/t.n).toFixed(2) + '%' : '-') +
+    kpi('Avg DTI', t.n ? (t.dti/t.n).toFixed(2) + '%' : '-');
+  document.getElementById('kpi1b').innerHTML =
+    kpi('Good loan %', t.n ? fmt.pct(goodN/t.n) : '-', `${fmt.int(goodN)} applications (Fully Paid + Current)`) +
+    kpi('Bad loan %', t.n ? fmt.pct(bad.n/t.n) : '-', `${fmt.int(bad.n)} applications (Charged Off)`) +
+    kpi('Good loan funded / received', fmt.usdM(goodAmt) + ' / ' + fmt.usdM(goodRecv)) +
+    kpi('Bad loan funded / received', fmt.usdM(bad.funded) + ' / ' + fmt.usdM(bad.recv));
+
+  const st = sortedEntries(byStatus, 'n');
+  Plotly.react('c-status', [{type:'pie', hole:.55, labels:st.map(e=>e[0]), values:st.map(e=>e[1].n), sort:false,
+    marker:{colors:st.map(e=>STATUS_COL[e[0]])}, textinfo:'label+percent'}], base({margin:{t:8,r:8,b:8,l:8}}), cfg);
+  document.getElementById('t-status').innerHTML = '<table><tr><th>Status</th><th>Applications</th><th>Funded</th><th>Received</th></tr>' +
+    st.map(([k,g]) => `<tr><td>${esc(k)}</td><td>${fmt.int(g.n)}</td><td>${fmt.usd(g.funded)}</td><td>${fmt.usd(g.recv)}</td></tr>`).join('') + '</table>';
+
+  const x = keys.map(k => { const y=Math.floor(k/100), m=k%100; return `${y}-${String(m).padStart(2,'0')}`; });
+  Plotly.react('c-trend', [
+    {type:'scatter', mode:'lines', name:'Funded', x, y:keys.map(k=>months.get(k).funded), line:{color:COL.blue, width:2.5}},
+    {type:'scatter', mode:'lines', name:'Received', x, y:keys.map(k=>months.get(k).recv), line:{color:COL.Good, width:2.5}}
+  ], base({showlegend:true, legend:{orientation:'h', y:1.12}, yaxis:{tickprefix:'$', tickformat:'.2s', gridcolor:'#EDF2F7'}, xaxis:{tickangle:-45}}), cfg);
+}
+
+function bar(id, entries, opts={}) {
+  const horizontal = opts.h;
+  const labels = entries.map(e => e[0]), vals = entries.map(e => e[1].funded);
+  const tr = {type:'bar', marker:{color:COL.blue}, text:vals.map(fmt.usdM), textposition:'outside', cliponaxis:false,
+    customdata:entries.map(e=>e[1].n), hovertemplate:'%{label}<br>%{text}<br>%{customdata:,} applications<extra></extra>'};
+  if (horizontal) Object.assign(tr, {orientation:'h', y:labels.slice().reverse(), x:vals.slice().reverse(), text:vals.slice().reverse().map(fmt.usdM), customdata:tr.customdata.slice().reverse()});
+  else Object.assign(tr, {x:opts.short ? labels.map(l => l.replace('< 1 year','<1y').replace(/ years?/,'y')) : labels, y:vals, hovertext:labels});
+  Plotly.react(id, [tr], base(horizontal ? {margin:{t:8,r:60,b:30,l:130}, yaxis:{ticks:'outside', ticklen:8, tickcolor:'rgba(0,0,0,0)'}, xaxis:{tickformat:'.2s', tickprefix:'$', gridcolor:'#EDF2F7'}}
+    : {yaxis:{tickformat:'.2s', tickprefix:'$', gridcolor:'#EDF2F7'}, margin:{t:24,r:10,b:55,l:56}}), cfg);
+}
+
+function renderP2(idx) {
+  const state = group(idx, i => L.state[i]);
+  const s = [...state.entries()];
+  Plotly.react('c-state', [{type:'choropleth', locationmode:'USA-states', locations:s.map(e=>e[0]), z:s.map(e=>e[1].funded/1e6),
+    text:s.map(e=>e[0] + ': ' + fmt.usdM(e[1].funded)), hoverinfo:'text', colorscale:[[0,'#BEE3F8'],[1,'#2B6CB0']],
+    colorbar:{tickprefix:'$', ticksuffix:'M', tickformat:'.1f', thickness:12}}],
+    base({margin:{t:0,r:0,b:0,l:0}, geo:{scope:'usa', showlakes:false, bgcolor:'rgba(0,0,0,0)'}}), cfg);
+  bar('c-purpose', sortedEntries(group(idx, i => L.purpose[i])), {h:true});
+  const term = group(idx, i => L.term[i]);
+  const tt = sortedEntries(term);
+  Plotly.react('c-term', [{type:'pie', hole:.55, labels:tt.map(e=>e[0] + ' months'), values:tt.map(e=>e[1].funded), sort:false,
+    marker:{colors:[COL.blue,'#90CDF4']}, textinfo:'label+percent'}], base({margin:{t:8,r:8,b:8,l:8}}), cfg);
+  const emp = group(idx, i => L.emp[i]);
+  bar('c-emp', EMP_ORDER.filter(k => emp.has(k)).map(k => [k, emp.get(k)]), {short:true});
+  bar('c-home', sortedEntries(group(idx, i => L.home[i])));
+  const gr = group(idx, i => L.grade[i]);
+  const keys = [...gr.keys()].sort();
+  const maxRate = Math.max(...keys.map(k => defRate(gr.get(k)) || 0), 0.0001);
+  document.getElementById('t-grade').innerHTML = '<table><tr><th>Grade</th><th>Applications</th><th>Funded</th><th>Avg interest rate</th><th>Default rate</th></tr>' +
+    keys.map(k => { const g = gr.get(k), r = defRate(g);
+      return `<tr><td>${esc(k)}</td><td>${fmt.int(g.n)}</td><td>${fmt.usd(g.funded)}</td><td>${(g.rate/g.n).toFixed(2)}%</td>` +
+        `<td>${r===null?'-':fmt.pct(r)}<span class="bar" style="width:${r===null?0:Math.round(r/maxRate*80)}px"></span></td></tr>`; }).join('') + '</table>';
+}
+
+function renderP3(idx) {
+  const t = total(idx), m = D.metrics, best = m.models[m.best_model];
+  document.getElementById('kpi3').innerHTML =
+    kpi('Default rate (resolved loans)', defRate(t) === null ? '-' : fmt.pct(defRate(t)), 'Bad / (Good + Bad)') +
+    kpi('Avg predicted risk', t.n ? fmt.pct(t.pred/t.n) : '-', 'Mean model default probability') +
+    kpi('Model', m.best_model.replace('_',' ').replace(/\b\w/g, c=>c.toUpperCase()), `ROC-AUC ${best.roc_auc.toFixed(3)}`) +
+    kpi('Recall / precision', `${fmt.pct(best.recall)} / ${fmt.pct(best.precision)}`, `Accuracy ${fmt.pct(best.accuracy)} on 20% hold-out`);
+
+  const tier = group(idx, i => L.tier[i]);
+  const tk = TIER_ORDER.filter(k => tier.has(k));
+  Plotly.react('c-tier', [{type:'bar', x:tk, y:tk.map(k=>tier.get(k).n), marker:{color:tk.map(k=>TIER_COL[k])}, text:tk.map(k=>fmt.int(tier.get(k).n)), textposition:'outside', cliponaxis:false}],
+    base({yaxis:{gridcolor:'#EDF2F7'}, margin:{t:24,r:10,b:42,l:56}}), cfg);
+  Plotly.react('c-tier2', [
+    {type:'bar', name:'Funded', x:tk, y:tk.map(k=>tier.get(k).funded), marker:{color:'#90CDF4'}, yaxis:'y'},
+    {type:'scatter', mode:'lines+markers', name:'Default rate', x:tk, y:tk.map(k=>defRate(tier.get(k))), marker:{color:COL.Bad}, line:{color:COL.Bad}, yaxis:'y2'}],
+    base({showlegend:true, legend:{orientation:'h', y:1.15}, yaxis:{tickformat:'.2s', tickprefix:'$', gridcolor:'#EDF2F7'},
+      yaxis2:{overlaying:'y', side:'right', tickformat:'.0%', rangemode:'tozero', showgrid:false}, margin:{t:30,r:50,b:42,l:56}}), cfg);
+  const gr = group(idx, i => L.grade[i]); const gk = [...gr.keys()].sort();
+  Plotly.react('c-grade', [{type:'bar', x:gk, y:gk.map(k=>defRate(gr.get(k))), marker:{color:COL.Bad}, text:gk.map(k=>fmt.pct(defRate(gr.get(k)) || 0)), textposition:'outside', cliponaxis:false}],
+    base({yaxis:{tickformat:'.0%', gridcolor:'#EDF2F7'}, margin:{t:24,r:10,b:42,l:56}}), cfg);
+
+  const band = group(idx, i => L.band[i]); const bk = TIER_ORDER.filter(k => band.has(k));
+  Plotly.react('c-band', [{type:'bar', x:bk, y:bk.map(k=>band.get(k).n), marker:{color:bk.map(k=>TIER_COL[k])}, text:bk.map(k=>fmt.int(band.get(k).n)), textposition:'outside', cliponaxis:false}],
+    base({yaxis:{gridcolor:'#EDF2F7'}, margin:{t:24,r:10,b:42,l:56}}), cfg);
+  Plotly.react('c-band2', [{type:'bar', x:bk, y:bk.map(k=>defRate(band.get(k))), marker:{color:bk.map(k=>TIER_COL[k])}, text:bk.map(k=>fmt.pct(defRate(band.get(k)) || 0)), textposition:'outside', cliponaxis:false}],
+    base({yaxis:{tickformat:'.0%', gridcolor:'#EDF2F7'}, margin:{t:24,r:10,b:42,l:56}}), cfg);
+
+  const imp = D.importance.slice(0, 15).reverse();
+  Plotly.react('c-imp', [{type:'bar', orientation:'h', y:imp.map(e=>e.feature), x:imp.map(e=>e.importance), marker:{color:COL.blue}}],
+    base({margin:{t:8,r:10,b:30,l:150}, yaxis:{ticks:'outside', ticklen:8, tickcolor:'rgba(0,0,0,0)'}, xaxis:{gridcolor:'#EDF2F7'}}), cfg);
+  document.getElementById('how').innerHTML = '<b>How to read this page.</b> Risk tiers come from loan grade: Low = A-B, Medium = C-D, High = E, Very High = F-G. ' +
+    'Predicted bands come from the model\'s default probability (Low &lt; 25%, Medium 25-50%, High 50-75%, Very High &ge; 75%). ' +
+    'If the model is useful, the actual default rate should rise from Low to Very High band, as shown in the validation chart.';
+}
+
+function render() {
+  const idx = mask();
+  ({p1:renderP1, p2:renderP2, p3:renderP3})[page](idx);
+}
+
+function fill(id, opts, key) {
+  const el = document.getElementById(id);
+  el.innerHTML = ['All', ...opts].map(o => `<option>${esc(o)}</option>`).join('');
+  el.onchange = () => { filt[key] = el.value; render(); };
+}
+fill('f-year', [...new Set(C.year)].sort(), 'year');
+fill('f-status', ['Good Loan','Bad Loan','Current'], 'status');
+fill('f-term', [...new Set(L.term)].sort(), 'term');
+document.getElementById('nav').onclick = e => {
+  const p = e.target.dataset.p; if (!p) return;
+  page = p;
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.p === p));
+  document.querySelectorAll('.page').forEach(s => s.classList.toggle('on', s.id === p));
+  render();
+};
+render();
+</script>
+</body>
+</html>
